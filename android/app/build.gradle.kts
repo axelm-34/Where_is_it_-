@@ -1,10 +1,8 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // Add the dependency for the Google services Gradle plugin
-    id("com.google.gms.google-services") version "4.4.4" apply false
+    id("com.google.gms.google-services") // Pas besoin de version ici si elle est dans le fichier racine
 }
 
 dependencies {
@@ -32,11 +30,12 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.where_is_it"
-        minSdkVersion 21 // <--- Modifie ici
-        targetSdkVersion flutter.targetSdkVersion
-                versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        // En .kts, on utilise "=" et les parenthèses
+        applicationId = "com.example.where_is_it"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     buildTypes {
