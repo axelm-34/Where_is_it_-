@@ -1,39 +1,48 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // Permet à l'application de savoir en temps réel si quelqu'un est connecté
-  Stream<User?> get user => _auth.authStateChanges();
-
-  // Fonction de connexion Google
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Déclenche le menu de sélection de compte Google
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null; // L'utilisateur a quitté sans choisir de compte
+      if (kIsWeb) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        return await _auth.signInWithPopup(googleProvider);
+      } else {
+        final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
-      // Crée l'identifiant pour Firebase
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        if (googleUser == null) {
+          return null;
+        }
 
-      // Connecte l'utilisateur sur Firebase
-      return await _auth.signInWithCredential(credential);
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        return await _auth.signInWithCredential(credential);
+      }
     } catch (e) {
-      print("Erreur Authentification Google : $e");
+      print('Google Sign-In error: $e');
       return null;
     }
   }
 
-  // Déconnexion
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
     await _auth.signOut();
+
+    if (!kIsWeb) {
+      await GoogleSignIn().signOut();
+    }
   }
+
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  User? get currentUser => _auth.currentUser;
 }

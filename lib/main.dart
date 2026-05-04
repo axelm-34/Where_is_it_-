@@ -1,19 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'screens/login_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+
+import 'firebase_options.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
-  // Indispensable pour Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const MyApp());
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const WhereIsItApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class WhereIsItApp extends StatelessWidget {
+  const WhereIsItApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,19 +26,36 @@ class MyApp extends StatelessWidget {
       title: 'Where Is It',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorSchemeSeed: Colors.blue,
         useMaterial3: true,
       ),
-      // On écoute l'état de l'authentification pour savoir quel écran afficher
-      home: StreamBuilder<User?>(
-        stream: AuthService().user, // On écoute l'état de connexion [cite: 174]
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return const HomeScreen(); // Si connecté -> Accueil [cite: 173]
-          }
-          return const LoginScreen(); // Sinon -> Connexion
-        },
-      ),
+      home: const AuthWrapper(),
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: AuthService().authStateChanges,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.hasData) {
+          return const HomeScreen();
+        }
+
+        return LoginScreen();
+      },
     );
   }
 }
